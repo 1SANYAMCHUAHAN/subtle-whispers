@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,61 +10,121 @@ interface AddProductionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdd: (item: Omit<ProductionItem, 'id'>) => void;
+  editingItem?: ProductionItem | null;
+  onSave?: (id: string, updates: Partial<ProductionItem>) => void;
+  onEditClose?: () => void;
 }
 
 export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
   open,
   onOpenChange,
-  onAdd
+  onAdd,
+  editingItem,
+  onSave,
+  onEditClose
 }) => {
   const [formData, setFormData] = useState({
     productCode: '',
     productName: '',
     quantity: '',
+    deadline: '30',
     priority: 'medium' as 'low' | 'medium' | 'high',
-    raisedStart: '',
-    raisedDuration: '',
-    preProductionStart: '',
-    preProductionDuration: '',
-    productionStart: '',
-    productionDuration: '',
-    packagingStart: '',
-    packagingDuration: ''
+    raisedStart: '1',
+    raisedDuration: '2',
+    preProductionStart: '3',
+    preProductionDuration: '3',
+    productionStart: '6',
+    productionDuration: '8',
+    packagingStart: '14',
+    packagingDuration: '3'
   });
+
+  const isEditing = !!editingItem;
+
+  useEffect(() => {
+    if (editingItem) {
+      setFormData({
+        productCode: editingItem.productCode,
+        productName: editingItem.productName,
+        quantity: editingItem.quantity.toString(),
+        deadline: editingItem.deadline.toString(),
+        priority: editingItem.priority,
+        raisedStart: editingItem.stages.raised.start.toString(),
+        raisedDuration: editingItem.stages.raised.duration.toString(),
+        preProductionStart: editingItem.stages.preProduction.start.toString(),
+        preProductionDuration: editingItem.stages.preProduction.duration.toString(),
+        productionStart: editingItem.stages.production.start.toString(),
+        productionDuration: editingItem.stages.production.duration.toString(),
+        packagingStart: editingItem.stages.packaging.start.toString(),
+        packagingDuration: editingItem.stages.packaging.duration.toString(),
+      });
+    } else {
+      resetForm();
+    }
+  }, [editingItem]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const newItem: Omit<ProductionItem, 'id'> = {
-      productCode: formData.productCode,
-      productName: formData.productName,
-      quantity: parseInt(formData.quantity),
-      priority: formData.priority,
-      stages: {
-        raised: {
-          start: parseInt(formData.raisedStart) || 1,
-          duration: parseInt(formData.raisedDuration) || 2,
-          completed: false
-        },
-        preProduction: {
-          start: parseInt(formData.preProductionStart) || 3,
-          duration: parseInt(formData.preProductionDuration) || 3,
-          completed: false
-        },
-        production: {
-          start: parseInt(formData.productionStart) || 6,
-          duration: parseInt(formData.productionDuration) || 5,
-          completed: false
-        },
-        packaging: {
-          start: parseInt(formData.packagingStart) || 11,
-          duration: parseInt(formData.packagingDuration) || 3,
-          completed: false
+    if (isEditing && editingItem && onSave) {
+      const updates: Partial<ProductionItem> = {
+        productCode: formData.productCode,
+        productName: formData.productName,
+        quantity: parseInt(formData.quantity),
+        deadline: parseInt(formData.deadline),
+        priority: formData.priority,
+        stages: {
+          raised: { 
+            start: parseInt(formData.raisedStart), 
+            duration: parseInt(formData.raisedDuration)
+          },
+          preProduction: { 
+            start: parseInt(formData.preProductionStart), 
+            duration: parseInt(formData.preProductionDuration)
+          },
+          production: { 
+            start: parseInt(formData.productionStart), 
+            duration: parseInt(formData.productionDuration)
+          },
+          packaging: { 
+            start: parseInt(formData.packagingStart), 
+            duration: parseInt(formData.packagingDuration)
+          }
         }
-      }
-    };
+      };
+      onSave(editingItem.id, updates);
+      onEditClose?.();
+    } else {
+      const newItem: Omit<ProductionItem, 'id'> = {
+        productCode: formData.productCode,
+        productName: formData.productName,
+        quantity: parseInt(formData.quantity),
+        deadline: parseInt(formData.deadline),
+        priority: formData.priority,
+        dailyStatus: {},
+        stages: {
+          raised: { 
+            start: parseInt(formData.raisedStart), 
+            duration: parseInt(formData.raisedDuration)
+          },
+          preProduction: { 
+            start: parseInt(formData.preProductionStart), 
+            duration: parseInt(formData.preProductionDuration)
+          },
+          production: { 
+            start: parseInt(formData.productionStart), 
+            duration: parseInt(formData.productionDuration)
+          },
+          packaging: { 
+            start: parseInt(formData.packagingStart), 
+            duration: parseInt(formData.packagingDuration)
+          }
+        }
+      };
 
-    onAdd(newItem);
+      onAdd(newItem);
+    }
+    
     onOpenChange(false);
     resetForm();
   };
@@ -74,23 +134,33 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
       productCode: '',
       productName: '',
       quantity: '',
+      deadline: '30',
       priority: 'medium',
-      raisedStart: '',
-      raisedDuration: '',
-      preProductionStart: '',
-      preProductionDuration: '',
-      productionStart: '',
-      productionDuration: '',
-      packagingStart: '',
-      packagingDuration: ''
+      raisedStart: '1',
+      raisedDuration: '2',
+      preProductionStart: '3',
+      preProductionDuration: '3',
+      productionStart: '6',
+      productionDuration: '8',
+      packagingStart: '14',
+      packagingDuration: '3'
     });
   };
 
+  const handleClose = () => {
+    onOpenChange(false);
+    if (isEditing && onEditClose) {
+      onEditClose();
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open || isEditing} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add New Production Item</DialogTitle>
+          <DialogTitle>
+            {isEditing ? 'Edit Production Item' : 'Add New Production Item'}
+          </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -118,7 +188,7 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="quantity">Quantity *</Label>
               <Input
@@ -128,6 +198,18 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
                 value={formData.quantity}
                 onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
                 placeholder="e.g., 500"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="deadline">Deadline (Day of Month)</Label>
+              <Input
+                id="deadline"
+                type="number"
+                min="1"
+                max="31"
+                value={formData.deadline}
+                onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
+                placeholder="30"
               />
             </div>
             <div className="space-y-2">
@@ -268,10 +350,12 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit">Add Production Item</Button>
+            <Button type="submit">
+              {isEditing ? 'Save Changes' : 'Add Production Item'}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
