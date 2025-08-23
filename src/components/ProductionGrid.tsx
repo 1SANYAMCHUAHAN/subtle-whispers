@@ -150,20 +150,21 @@ export const ProductionGrid: React.FC<ProductionGridProps> = ({
                   <Edit className="h-4 w-4" />
                 </Button>
               </TableCell>
-              {days.map(day => {
+               {days.map(day => {
                 const stageInfo = getStageForDay(item, day);
                 const dayStatus = item.dailyStatus[day];
                 const isEditing = editingCell?.itemId === item.id && editingCell?.day === day;
                 
                 return (
                   <TableCell key={day} className="p-1">
-                    {stageInfo && (
+                    {stageInfo ? (
                       <div
                         className={cn(
-                          "h-6 rounded border cursor-pointer transition-all hover:opacity-80 relative flex items-center justify-center text-xs font-bold",
+                          "h-7 w-7 rounded-md border-2 cursor-pointer transition-all hover:scale-110 relative flex items-center justify-center text-xs font-bold shadow-sm",
                           stageColors[stageInfo.name],
                           dayStatus?.status && statusColors[dayStatus.status],
-                          isEditing && "ring-2 ring-primary"
+                          isEditing && "ring-2 ring-primary ring-offset-1",
+                          "hover:shadow-md"
                         )}
                         title={`${stageLabels[stageInfo.name]} - Day ${day} - Press Y/N/D`}
                         onClick={() => handleCellClick(item.id, day)}
@@ -172,6 +173,8 @@ export const ProductionGrid: React.FC<ProductionGridProps> = ({
                       >
                         {dayStatus?.status || ''}
                       </div>
+                    ) : (
+                      <div className="h-7 w-7"></div>
                     )}
                   </TableCell>
                 );
