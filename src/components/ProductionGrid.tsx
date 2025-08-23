@@ -15,10 +15,10 @@ interface ProductionGridProps {
 }
 
 const stageColors = {
-  raised: 'bg-primary/20 border-primary/30',
-  preProduction: 'bg-warning/20 border-warning/30',
-  production: 'bg-success/20 border-success/30',
-  packaging: 'bg-accent/20 border-accent/30'
+  raised: 'bg-blue-100 border-blue-300 text-blue-800',
+  preProduction: 'bg-orange-100 border-orange-300 text-orange-800',
+  production: 'bg-green-100 border-green-300 text-green-800',
+  packaging: 'bg-violet-100 border-violet-300 text-violet-800'
 };
 
 const statusColors = {
