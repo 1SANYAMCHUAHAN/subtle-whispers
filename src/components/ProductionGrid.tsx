@@ -86,16 +86,25 @@ export const ProductionGrid: React.FC<ProductionGridProps> = ({
   };
 
   const handleCellKeyDown = (e: React.KeyboardEvent, itemId: string, day: number) => {
-    if (e.key === 'y' || e.key === 'Y') {
+    // Handle both uppercase and lowercase, and prevent default browser behavior
+    const key = e.key.toLowerCase();
+    
+    if (key === 'y') {
       e.preventDefault();
       handleStatusChange(itemId, day, 'Y');
-    } else if (e.key === 'n' || e.key === 'N') {
+    } else if (key === 'n') {
       e.preventDefault();
       handleStatusChange(itemId, day, 'N');
-    } else if (e.key === 'd' || e.key === 'D') {
+    } else if (key === 'd') {
       e.preventDefault();
       handleStatusChange(itemId, day, 'D');
+    } else if (key === 'delete' || key === 'backspace') {
+      e.preventDefault();
+      const item = items.find(i => i.id === itemId);
+      const stageInfo = item ? getStageForDay(item, day) : null;
+      onUpdateDayStatus(itemId, day, null, stageInfo?.name || null);
     } else if (e.key === 'Escape') {
+      e.preventDefault();
       setEditingCell(null);
     }
   };
@@ -164,12 +173,14 @@ export const ProductionGrid: React.FC<ProductionGridProps> = ({
                           stageColors[stageInfo.name],
                           dayStatus?.status && statusColors[dayStatus.status],
                           isEditing && "ring-2 ring-primary ring-offset-1",
-                          "hover:shadow-md"
+                          "hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
                         )}
-                        title={`${stageLabels[stageInfo.name]} - Day ${day} - Press Y/N/D`}
+                        title={`${stageLabels[stageInfo.name]} - Day ${day} - Press Y/N/D or Delete to clear`}
                         onClick={() => handleCellClick(item.id, day)}
                         onKeyDown={(e) => handleCellKeyDown(e, item.id, day)}
                         tabIndex={0}
+                        role="button"
+                        aria-label={`${stageLabels[stageInfo.name]} day ${day}, current status: ${dayStatus?.status || 'empty'}`}
                       >
                         {dayStatus?.status || ''}
                       </div>

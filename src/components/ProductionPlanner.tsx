@@ -3,12 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CalendarDays, Plus, Search, Filter, AlertTriangle } from 'lucide-react';
+import { Edit } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProductionGrid } from './ProductionGrid';
 import { AddProductionDialog } from './AddProductionDialog';
 import { ProductionCalendarHeader } from './ProductionCalendarHeader';
-import { MissedDeadlinesSheet } from './MissedDeadlinesSheet';
+import { DelayAlertSystem, DelayRecord } from './DelayAlertSystem';
+import { DelayRecordsManager } from './DelayRecordsManager';
+import { ProgressDashboard } from './ProgressDashboard';
+import { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp';
+import { BulkUpdateDialog } from './BulkUpdateDialog';
 
 export interface DayStatus {
   status: 'Y' | 'N' | 'D' | null; // Y=completed, N=not completed, D=delayed
@@ -36,6 +41,10 @@ export const ProductionPlanner = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ProductionItem | null>(null);
+  const [delayAlertOpen, setDelayAlertOpen] = useState(false);
+  const [delayAlertItem, setDelayAlertItem] = useState<ProductionItem | null>(null);
+  const [delayRecords, setDelayRecords] = useState<DelayRecord[]>([]);
+  const [bulkUpdateOpen, setBulkUpdateOpen] = useState(false);
   const [productionItems, setProductionItems] = useState<ProductionItem[]>([
     {
       id: '1',
@@ -101,6 +110,20 @@ export const ProductionPlanner = () => {
   };
 
   const updateDayStatus = (itemId: string, day: number, status: 'Y' | 'N' | 'D' | null, stage: string | null) => {
+    const item = productionItems.find(i => i.id === itemId);
+    
+    // Check if this is the final day of packaging stage and status is 'N'
+    if (item && stage === 'packaging' && status === 'N') {
+      const packagingStage = item.stages.packaging;
+      const finalPackagingDay = packagingStage.start + packagingStage.duration - 1;
+      
+      if (day === finalPackagingDay) {
+        // Trigger delay alert
+        setDelayAlertItem(item);
+        setDelayAlertOpen(true);
+      }
+    }
+    
     setProductionItems(items =>
       items.map(item => {
         if (item.id === itemId) {
@@ -113,6 +136,30 @@ export const ProductionPlanner = () => {
           return { ...item, dailyStatus: newDailyStatus };
         }
         return item;
+      })
+    );
+  };
+
+  const saveDelayRecord = (record: Omit<DelayRecord, 'id' | 'createdAt'>) => {
+    const newRecord: DelayRecord = {
+      ...record,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString()
+    };
+    setDelayRecords(prev => [...prev, newRecord]);
+  };
+
+  const handleBulkUpdate = (updates: { itemIds: string[]; status: 'Y' | 'N' | 'D'; stage: string; days: number[] }) => {
+    setProductionItems(items =>
+      items.map(item => {
+        if (!updates.itemIds.includes(item.id)) return item;
+        
+        const newDailyStatus = { ...item.dailyStatus };
+        updates.days.forEach(day => {
+          newDailyStatus[day] = { status: updates.status, stage: updates.stage as any };
+        });
+        
+        return { ...item, dailyStatus: newDailyStatus };
       })
     );
   };
@@ -167,6 +214,11 @@ export const ProductionPlanner = () => {
                 <Filter className="w-4 h-4 mr-2" />
                 Filter
               </Button>
+              <KeyboardShortcutsHelp />
+              <Button variant="outline" size="sm" onClick={() => setBulkUpdateOpen(true)}>
+                <Edit className="w-4 h-4 mr-2" />
+                Bulk Update
+              </Button>
             </div>
             <Button onClick={() => setIsAddDialogOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
@@ -177,11 +229,19 @@ export const ProductionPlanner = () => {
       </Card>
 
       {/* Main Content */}
-      <Tabs defaultValue="production" className="space-y-6">
+      <Tabs defaultValue="dashboard" className="space-y-6">
         <TabsList>
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="production">Production Schedule</TabsTrigger>
-          <TabsTrigger value="missed">Missed Deadlines ({getMissedDeadlines().length})</TabsTrigger>
+          <TabsTrigger value="delays">Delay Records ({delayRecords.length})</TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="dashboard">
+          <ProgressDashboard 
+            items={filteredItems}
+            delayRecords={delayRecords}
+          />
+        </TabsContent>
         
         <TabsContent value="production">
           <Card>
@@ -203,10 +263,9 @@ export const ProductionPlanner = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="missed">
-          <MissedDeadlinesSheet 
-            items={getMissedDeadlines()}
-            onUpdateItem={updateProductionItem}
+        <TabsContent value="delays">
+          <DelayRecordsManager 
+            delayRecords={delayRecords}
           />
         </TabsContent>
       </Tabs>
@@ -219,6 +278,21 @@ export const ProductionPlanner = () => {
         editingItem={editingItem}
         onSave={updateProductionItem}
         onEditClose={() => setEditingItem(null)}
+      />
+
+      {/* Bulk Update Dialog */}
+      <BulkUpdateDialog
+        open={bulkUpdateOpen}
+        onOpenChange={setBulkUpdateOpen}
+        items={filteredItems}
+        onBulkUpdate={handleBulkUpdate}
+      />
+      {/* Delay Alert System */}
+      <DelayAlertSystem
+        open={delayAlertOpen}
+        onOpenChange={setDelayAlertOpen}
+        productionItem={delayAlertItem}
+        onSaveDelayRecord={saveDelayRecord}
       />
     </div>
   );
