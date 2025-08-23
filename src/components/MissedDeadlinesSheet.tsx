@@ -1,11 +1,11 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ProductionItem } from './ProductionPlanner';
-import { AlertTriangle, Calendar, TrendingDown } from 'lucide-react';
+import { AlertTriangle, Calendar, TrendingDown, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 interface MissedDeadlinesSheetProps {
   items: ProductionItem[];
@@ -20,6 +20,28 @@ export const MissedDeadlinesSheet: React.FC<MissedDeadlinesSheetProps> = ({
     const totalRequiredDays = Object.values(item.stages).reduce((sum, stage) => sum + stage.duration, 0);
     const completedDays = Object.entries(item.dailyStatus).filter(([_, dayStatus]) => dayStatus.status === 'Y').length;
     return totalRequiredDays > 0 ? (completedDays / totalRequiredDays) * 100 : 0;
+  };
+
+  const exportToExcel = () => {
+    const exportData = items.map(item => ({
+      'Product Code': item.productCode,
+      'Product Name': item.productName,
+      'Quantity': item.quantity,
+      'Priority': item.priority,
+      'Deadline': `Day ${item.deadline}`,
+      'Days Overdue': getDaysOverdue(item),
+      'Delayed Days': getDelayedDays(item),
+      'Progress %': Math.round(calculateProgress(item)),
+      'Status': calculateProgress(item) === 100 ? 'Completed Late' : 'In Progress',
+      'Month': new Date().toLocaleString('default', { month: 'long', year: 'numeric' })
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Missed Deadlines');
+    
+    const fileName = `missed_deadlines_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
   };
 
   const getDaysOverdue = (item: ProductionItem) => {
@@ -64,9 +86,19 @@ export const MissedDeadlinesSheet: React.FC<MissedDeadlinesSheetProps> = ({
       {Object.entries(monthlyGroups).map(([month, monthItems]) => (
         <Card key={month}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              {month} - Missed Deadlines ({monthItems.length})
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                {month} - Missed Deadlines ({monthItems.length})
+              </div>
+              <Button
+                onClick={exportToExcel}
+                className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-elegant"
+                size="sm"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export to Excel
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -74,7 +106,6 @@ export const MissedDeadlinesSheet: React.FC<MissedDeadlinesSheetProps> = ({
               <TableHeader>
                 <TableRow>
                   <TableHead>Product</TableHead>
-                  <TableHead className="text-center">Progress</TableHead>
                   <TableHead className="text-center">Deadline</TableHead>
                   <TableHead className="text-center">Days Overdue</TableHead>
                   <TableHead className="text-center">Delayed Days</TableHead>
@@ -90,14 +121,6 @@ export const MissedDeadlinesSheet: React.FC<MissedDeadlinesSheetProps> = ({
                         <div className="font-semibold text-sm">{item.productCode}</div>
                         <div className="text-xs text-muted-foreground">{item.productName}</div>
                         <div className="text-xs text-muted-foreground">Qty: {item.quantity}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="space-y-1">
-                        <Progress value={calculateProgress(item)} className="h-2" />
-                        <span className="text-xs text-muted-foreground">
-                          {Math.round(calculateProgress(item))}%
-                        </span>
                       </div>
                     </TableCell>
                     <TableCell className="text-center">

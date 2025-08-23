@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { ProductionItem, DayStatus } from './ProductionPlanner';
 import { cn } from '@/lib/utils';
@@ -107,7 +106,6 @@ export const ProductionGrid: React.FC<ProductionGridProps> = ({
         <TableHeader>
           <TableRow>
             <TableHead className="w-48 sticky left-0 bg-background border-r">Product</TableHead>
-            <TableHead className="w-24 text-center">Progress</TableHead>
             <TableHead className="w-20 text-center">QTY</TableHead>
             <TableHead className="w-20 text-center">Priority</TableHead>
             <TableHead className="w-20 text-center">Deadline</TableHead>
@@ -126,14 +124,6 @@ export const ProductionGrid: React.FC<ProductionGridProps> = ({
                 <div className="space-y-1">
                   <div className="font-semibold text-sm">{item.productCode}</div>
                   <div className="text-xs text-muted-foreground">{item.productName}</div>
-                </div>
-              </TableCell>
-              <TableCell className="text-center">
-                <div className="space-y-1">
-                  <Progress value={calculateProgress(item)} className="h-2" />
-                  <span className="text-xs text-muted-foreground">
-                    {Math.round(calculateProgress(item))}%
-                  </span>
                 </div>
               </TableCell>
               <TableCell className="text-center font-medium">

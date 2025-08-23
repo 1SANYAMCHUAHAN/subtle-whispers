@@ -237,9 +237,12 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
             <h3 className="text-lg font-semibold">Production Stages</h3>
             
             {/* Raised Stage */}
-            <div className="grid grid-cols-4 gap-4 p-4 border rounded-lg">
+            <div className="grid grid-cols-4 gap-4 p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
               <div className="col-span-4">
-                <h4 className="font-medium text-blue-600 mb-2">Raised Stage</h4>
+                <h4 className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  Raised Stage
+                </h4>
               </div>
               <div className="space-y-2">
                 <Label>Start Day</Label>
@@ -265,9 +268,12 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
             </div>
 
             {/* Pre Production Stage */}
-            <div className="grid grid-cols-4 gap-4 p-4 border rounded-lg">
+            <div className="grid grid-cols-4 gap-4 p-4 border rounded-lg bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
               <div className="col-span-4">
-                <h4 className="font-medium text-orange-600 mb-2">Pre Production Stage</h4>
+                <h4 className="font-semibold text-orange-700 mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+                  Pre Production Stage
+                </h4>
               </div>
               <div className="space-y-2">
                 <Label>Start Day</Label>
@@ -293,9 +299,12 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
             </div>
 
             {/* Production Stage */}
-            <div className="grid grid-cols-4 gap-4 p-4 border rounded-lg">
+            <div className="grid grid-cols-4 gap-4 p-4 border rounded-lg bg-gradient-to-r from-green-50 to-green-100 border-green-200">
               <div className="col-span-4">
-                <h4 className="font-medium text-green-600 mb-2">Production Stage</h4>
+                <h4 className="font-semibold text-green-700 mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  Production Stage
+                </h4>
               </div>
               <div className="space-y-2">
                 <Label>Start Day</Label>
@@ -321,9 +330,12 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
             </div>
 
             {/* Packaging Stage */}
-            <div className="grid grid-cols-4 gap-4 p-4 border rounded-lg">
+            <div className="grid grid-cols-4 gap-4 p-4 border rounded-lg bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
               <div className="col-span-4">
-                <h4 className="font-medium text-purple-600 mb-2">Packaging Stage</h4>
+                <h4 className="font-semibold text-purple-700 mb-2 flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                  Packaging Stage
+                </h4>
               </div>
               <div className="space-y-2">
                 <Label>Start Day</Label>
@@ -353,7 +365,10 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit">
+            <Button 
+              type="submit"
+              className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-elegant"
+            >
               {isEditing ? 'Save Changes' : 'Add Production Item'}
             </Button>
           </DialogFooter>
