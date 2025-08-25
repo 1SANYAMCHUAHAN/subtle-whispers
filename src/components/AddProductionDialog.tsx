@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ProductionItem } from './ProductionPlanner';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus, X } from 'lucide-react';
+import { ProductionItem, SKU } from './ProductionPlanner';
 
 interface AddProductionDialogProps {
   open: boolean;
@@ -25,9 +27,8 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     productCode: '',
-    productName: '',
-    quantity: '',
-    deadline: '30',
+    startDate: '',
+    endDate: '',
     priority: 'medium' as 'low' | 'medium' | 'high',
     raisedStart: '1',
     raisedDuration: '2',
@@ -39,15 +40,18 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
     packagingDuration: '3'
   });
 
+  const [skus, setSkus] = useState<SKU[]>([{ name: '', quantity: 0 }]);
+  const [bulkSkuInput, setBulkSkuInput] = useState('');
+  const [inputMode, setInputMode] = useState<'individual' | 'bulk'>('individual');
+
   const isEditing = !!editingItem;
 
   useEffect(() => {
     if (editingItem) {
       setFormData({
         productCode: editingItem.productCode,
-        productName: editingItem.productName,
-        quantity: editingItem.quantity.toString(),
-        deadline: editingItem.deadline.toString(),
+        startDate: editingItem.startDate,
+        endDate: editingItem.endDate,
         priority: editingItem.priority,
         raisedStart: editingItem.stages.raised.start.toString(),
         raisedDuration: editingItem.stages.raised.duration.toString(),
@@ -58,6 +62,7 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
         packagingStart: editingItem.stages.packaging.start.toString(),
         packagingDuration: editingItem.stages.packaging.duration.toString(),
       });
+      setSkus(editingItem.skus);
     } else {
       resetForm();
     }
@@ -66,12 +71,19 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    let finalSkus = skus;
+    
+    // If using bulk input mode, parse the textarea
+    if (inputMode === 'bulk' && bulkSkuInput.trim()) {
+      finalSkus = parseBulkSkuInput(bulkSkuInput);
+    }
+    
     if (isEditing && editingItem && onSave) {
       const updates: Partial<ProductionItem> = {
         productCode: formData.productCode,
-        productName: formData.productName,
-        quantity: parseInt(formData.quantity),
-        deadline: parseInt(formData.deadline),
+        skus: finalSkus,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
         priority: formData.priority,
         stages: {
           raised: { 
@@ -97,9 +109,9 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
     } else {
       const newItem: Omit<ProductionItem, 'id'> = {
         productCode: formData.productCode,
-        productName: formData.productName,
-        quantity: parseInt(formData.quantity),
-        deadline: parseInt(formData.deadline),
+        skus: finalSkus,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
         priority: formData.priority,
         dailyStatus: {},
         stages: {
@@ -129,12 +141,28 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
     resetForm();
   };
 
+  const parseBulkSkuInput = (input: string): SKU[] => {
+    const lines = input.split('\n').filter(line => line.trim());
+    return lines.map(line => {
+      const parts = line.split('\t'); // Tab-separated
+      if (parts.length >= 2) {
+        return {
+          name: parts[0].trim(),
+          quantity: parseInt(parts[1]) || 500 // Default quantity
+        };
+      }
+      return {
+        name: line.trim(),
+        quantity: 500 // Default quantity
+      };
+    }).filter(sku => sku.name);
+  };
+
   const resetForm = () => {
     setFormData({
       productCode: '',
-      productName: '',
-      quantity: '',
-      deadline: '30',
+      startDate: '',
+      endDate: '',
       priority: 'medium',
       raisedStart: '1',
       raisedDuration: '2',
@@ -145,6 +173,23 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
       packagingStart: '14',
       packagingDuration: '3'
     });
+    setSkus([{ name: '', quantity: 0 }]);
+    setBulkSkuInput('');
+    setInputMode('individual');
+  };
+
+  const addSku = () => {
+    setSkus([...skus, { name: '', quantity: 0 }]);
+  };
+
+  const removeSku = (index: number) => {
+    setSkus(skus.filter((_, i) => i !== index));
+  };
+
+  const updateSku = (index: number, field: keyof SKU, value: string | number) => {
+    setSkus(skus.map((sku, i) => 
+      i === index ? { ...sku, [field]: value } : sku
+    ));
   };
 
   const handleClose = () => {
@@ -156,7 +201,7 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
 
   return (
     <Dialog open={open || isEditing} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? 'Edit Production Item' : 'Add New Production Item'}
@@ -165,7 +210,7 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
         
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Info */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="productCode">Product Code *</Label>
               <Input
@@ -177,187 +222,167 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="productName">Product Name *</Label>
+              <Label htmlFor="startDate">Start Date *</Label>
               <Input
-                id="productName"
+                id="startDate"
+                type="date"
                 required
-                value={formData.productName}
-                onChange={(e) => setFormData(prev => ({ ...prev, productName: e.target.value }))}
-                placeholder="e.g., Deluxe Series"
+                value={formData.startDate}
+                onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="endDate">End Date *</Label>
+              <Input
+                id="endDate"
+                type="date"
+                required
+                value={formData.endDate}
+                onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Quantity *</Label>
-              <Input
-                id="quantity"
-                type="number"
-                required
-                value={formData.quantity}
-                onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
-                placeholder="e.g., 500"
-              />
+          <div className="space-y-2">
+            <Label htmlFor="priority">Priority</Label>
+            <Select
+              value={formData.priority}
+              onValueChange={(value: 'low' | 'medium' | 'high') => 
+                setFormData(prev => ({ ...prev, priority: value }))
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* SKU Input Mode Selection */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Label>SKU Input Mode:</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={inputMode === 'individual' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setInputMode('individual')}
+                >
+                  Individual
+                </Button>
+                <Button
+                  type="button"
+                  variant={inputMode === 'bulk' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setInputMode('bulk')}
+                >
+                  Bulk Paste
+                </Button>
+              </div>
             </div>
+
+            {inputMode === 'individual' ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>SKUs</Label>
+                  <Button type="button" variant="outline" size="sm" onClick={addSku}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add SKU
+                  </Button>
+                </div>
+                
+                {skus.map((sku, index) => (
+                  <div key={index} className="flex items-center gap-3 p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="SKU Name"
+                        value={sku.name}
+                        onChange={(e) => updateSku(index, 'name', e.target.value)}
+                      />
+                    </div>
+                    <div className="w-32">
+                      <Input
+                        type="number"
+                        placeholder="Qty"
+                        value={sku.quantity}
+                        onChange={(e) => updateSku(index, 'quantity', parseInt(e.target.value) || 0)}
+                      />
+                    </div>
+                    {skus.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeSku(index)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="bulkSkuInput">
+                  Paste SKUs (one per line, tab-separated: Name + Quantity)
+                </Label>
+                <Textarea
+                  id="bulkSkuInput"
+                  placeholder="Kururra Cream & Onion	500&#10;Miller Chivda Bambaya Bhel	500&#10;Hazelnut Protein Balls	500"
+                  value={bulkSkuInput}
+                  onChange={(e) => setBulkSkuInput(e.target.value)}
+                  rows={8}
+                  className="font-mono text-sm"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Copy and paste from Excel/spreadsheet. Format: SKU Name [Tab] Quantity
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Stage Configuration - Simplified*/}
+          <div className="grid grid-cols-4 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="deadline">Deadline (Day of Month)</Label>
+              <Label className="text-blue-600">Raised (Days)</Label>
               <Input
-                id="deadline"
                 type="number"
                 min="1"
-                max="31"
-                value={formData.deadline}
-                onChange={(e) => setFormData(prev => ({ ...prev, deadline: e.target.value }))}
-                placeholder="30"
+                value={formData.raisedDuration}
+                onChange={(e) => setFormData(prev => ({ ...prev, raisedDuration: e.target.value }))}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Select
-                value={formData.priority}
-                onValueChange={(value: 'low' | 'medium' | 'high') => 
-                  setFormData(prev => ({ ...prev, priority: value }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label className="text-orange-600">Pre Production (Days)</Label>
+              <Input
+                type="number"
+                min="1"
+                value={formData.preProductionDuration}
+                onChange={(e) => setFormData(prev => ({ ...prev, preProductionDuration: e.target.value }))}
+              />
             </div>
-          </div>
-
-          {/* Stage Configuration */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Production Stages</h3>
-            
-            {/* Raised Stage */}
-            <div className="grid grid-cols-4 gap-4 p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
-              <div className="col-span-4">
-                <h4 className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                  Raised Stage
-                </h4>
-              </div>
-              <div className="space-y-2">
-                <Label>Start Day</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="31"
-                  value={formData.raisedStart}
-                  onChange={(e) => setFormData(prev => ({ ...prev, raisedStart: e.target.value }))}
-                  placeholder="1"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Duration (days)</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={formData.raisedDuration}
-                  onChange={(e) => setFormData(prev => ({ ...prev, raisedDuration: e.target.value }))}
-                  placeholder="2"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label className="text-green-600">Production (Days)</Label>
+              <Input
+                type="number"
+                min="1"
+                value={formData.productionDuration}
+                onChange={(e) => setFormData(prev => ({ ...prev, productionDuration: e.target.value }))}
+              />
             </div>
-
-            {/* Pre Production Stage */}
-            <div className="grid grid-cols-4 gap-4 p-4 border rounded-lg bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200">
-              <div className="col-span-4">
-                <h4 className="font-semibold text-orange-700 mb-2 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                  Pre Production Stage
-                </h4>
-              </div>
-              <div className="space-y-2">
-                <Label>Start Day</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="31"
-                  value={formData.preProductionStart}
-                  onChange={(e) => setFormData(prev => ({ ...prev, preProductionStart: e.target.value }))}
-                  placeholder="3"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Duration (days)</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={formData.preProductionDuration}
-                  onChange={(e) => setFormData(prev => ({ ...prev, preProductionDuration: e.target.value }))}
-                  placeholder="3"
-                />
-              </div>
-            </div>
-
-            {/* Production Stage */}
-            <div className="grid grid-cols-4 gap-4 p-4 border rounded-lg bg-gradient-to-r from-green-50 to-green-100 border-green-200">
-              <div className="col-span-4">
-                <h4 className="font-semibold text-green-700 mb-2 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  Production Stage
-                </h4>
-              </div>
-              <div className="space-y-2">
-                <Label>Start Day</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="31"
-                  value={formData.productionStart}
-                  onChange={(e) => setFormData(prev => ({ ...prev, productionStart: e.target.value }))}
-                  placeholder="6"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Duration (days)</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={formData.productionDuration}
-                  onChange={(e) => setFormData(prev => ({ ...prev, productionDuration: e.target.value }))}
-                  placeholder="5"
-                />
-              </div>
-            </div>
-
-            {/* Packaging Stage */}
-            <div className="grid grid-cols-4 gap-4 p-4 border rounded-lg bg-gradient-to-r from-purple-50 to-purple-100 border-purple-200">
-              <div className="col-span-4">
-                <h4 className="font-semibold text-purple-700 mb-2 flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                  Packaging Stage
-                </h4>
-              </div>
-              <div className="space-y-2">
-                <Label>Start Day</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  max="31"
-                  value={formData.packagingStart}
-                  onChange={(e) => setFormData(prev => ({ ...prev, packagingStart: e.target.value }))}
-                  placeholder="11"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Duration (days)</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={formData.packagingDuration}
-                  onChange={(e) => setFormData(prev => ({ ...prev, packagingDuration: e.target.value }))}
-                  placeholder="3"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label className="text-purple-600">Packaging (Days)</Label>
+              <Input
+                type="number"
+                min="1"
+                value={formData.packagingDuration}
+                onChange={(e) => setFormData(prev => ({ ...prev, packagingDuration: e.target.value }))}
+              />
             </div>
           </div>
 
@@ -365,10 +390,7 @@ export const AddProductionDialog: React.FC<AddProductionDialogProps> = ({
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button 
-              type="submit"
-              className="bg-gradient-primary hover:bg-gradient-primary/90 text-white shadow-elegant"
-            >
+            <Button type="submit">
               {isEditing ? 'Save Changes' : 'Add Production Item'}
             </Button>
           </DialogFooter>

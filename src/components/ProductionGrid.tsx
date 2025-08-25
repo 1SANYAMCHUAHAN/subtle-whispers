@@ -115,9 +115,9 @@ export const ProductionGrid: React.FC<ProductionGridProps> = ({
         <TableHeader>
           <TableRow>
             <TableHead className="w-48 sticky left-0 bg-background border-r">Product</TableHead>
-            <TableHead className="w-20 text-center">QTY</TableHead>
+            <TableHead className="w-32 text-center">SKUs</TableHead>
             <TableHead className="w-20 text-center">Priority</TableHead>
-            <TableHead className="w-20 text-center">Deadline</TableHead>
+            <TableHead className="w-32 text-center">Date Range</TableHead>
             <TableHead className="w-16 text-center">Actions</TableHead>
             {days.map(day => (
               <TableHead key={day} className="w-8 text-center text-xs">
@@ -132,11 +132,29 @@ export const ProductionGrid: React.FC<ProductionGridProps> = ({
               <TableCell className="font-medium sticky left-0 bg-background border-r">
                 <div className="space-y-1">
                   <div className="font-semibold text-sm">{item.productCode}</div>
-                  <div className="text-xs text-muted-foreground">{item.productName}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {item.skus.length} SKU{item.skus.length !== 1 ? 's' : ''}
+                  </div>
                 </div>
               </TableCell>
-              <TableCell className="text-center font-medium">
-                {item.quantity}
+              <TableCell className="text-center">
+                <div className="space-y-1">
+                  {item.skus.slice(0, 2).map((sku, index) => (
+                    <div key={index} className="text-xs">
+                      <div className="font-medium truncate max-w-[120px]" title={sku.name}>
+                        {sku.name}
+                      </div>
+                      <div className="text-muted-foreground">
+                        Qty: {sku.quantity}
+                      </div>
+                    </div>
+                  ))}
+                  {item.skus.length > 2 && (
+                    <div className="text-xs text-muted-foreground">
+                      +{item.skus.length - 2} more
+                    </div>
+                  )}
+                </div>
               </TableCell>
               <TableCell className="text-center">
                 <Badge variant={getPriorityColor(item.priority)} className="text-xs">
@@ -144,10 +162,17 @@ export const ProductionGrid: React.FC<ProductionGridProps> = ({
                 </Badge>
               </TableCell>
               <TableCell className="text-center">
-                <Badge variant={item.deadline < new Date().getDate() ? "destructive" : "outline"} className="text-xs">
-                  <Calendar className="w-3 h-3 mr-1" />
-                  {item.deadline}
-                </Badge>
+                <div className="space-y-1">
+                  <div className="text-xs">
+                    <div className="font-medium">
+                      {new Date(item.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </div>
+                    <div className="text-muted-foreground">to</div>
+                    <div className="font-medium">
+                      {new Date(item.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </div>
+                  </div>
+                </div>
               </TableCell>
               <TableCell className="text-center">
                 <Button
