@@ -3,8 +3,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ProductionItem, DayStatus } from './ProductionPlanner';
+import { SKUDetailView } from './SKUDetailView';
 import { cn } from '@/lib/utils';
-import { Edit, Calendar } from 'lucide-react';
+import { Edit, Calendar, Eye } from 'lucide-react';
 
 interface ProductionGridProps {
   items: ProductionItem[];
@@ -42,6 +43,8 @@ export const ProductionGrid: React.FC<ProductionGridProps> = ({
   onEditItem
 }) => {
   const [editingCell, setEditingCell] = useState<{itemId: string, day: number} | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ProductionItem | null>(null);
+  const [skuDetailOpen, setSKUDetailOpen] = useState(false);
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
@@ -109,6 +112,11 @@ export const ProductionGrid: React.FC<ProductionGridProps> = ({
     }
   };
 
+  const openSKUDetail = (item: ProductionItem) => {
+    setSelectedItem(item);
+    setSKUDetailOpen(true);
+  };
+
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -118,7 +126,7 @@ export const ProductionGrid: React.FC<ProductionGridProps> = ({
             <TableHead className="w-32 text-center">SKUs</TableHead>
             <TableHead className="w-20 text-center">Priority</TableHead>
             <TableHead className="w-32 text-center">Date Range</TableHead>
-            <TableHead className="w-16 text-center">Actions</TableHead>
+            <TableHead className="w-24 text-center">Actions</TableHead>
             {days.map(day => (
               <TableHead key={day} className="w-8 text-center text-xs">
                 {day}
@@ -175,14 +183,26 @@ export const ProductionGrid: React.FC<ProductionGridProps> = ({
                 </div>
               </TableCell>
               <TableCell className="text-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onEditItem(item)}
-                  className="h-8 w-8 p-0"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-1 justify-center">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openSKUDetail(item)}
+                    className="h-8 w-8 p-0"
+                    title="View SKU Details"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onEditItem(item)}
+                    className="h-8 w-8 p-0"
+                    title="Edit Production"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
               </TableCell>
                {days.map(day => {
                 const stageInfo = getStageForDay(item, day);
@@ -219,6 +239,13 @@ export const ProductionGrid: React.FC<ProductionGridProps> = ({
           ))}
         </TableBody>
       </Table>
+      
+      <SKUDetailView
+        open={skuDetailOpen}
+        onOpenChange={setSKUDetailOpen}
+        productionItem={selectedItem}
+        currentMonth={currentMonth}
+      />
     </div>
   );
 };
