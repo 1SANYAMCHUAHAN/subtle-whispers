@@ -44,28 +44,122 @@ export const ProductionPlanner = () => {
   const [productionItems, setProductionItems] = useState<ProductionItem[]>([
     {
       id: '1',
-      productCode: 'ZEPAU61',
+      productCode: 'CENV32',
       skus: [
-        { name: 'MOTHER SECRET', quantity: 500 },
-        { name: 'Kururra Cream & Onion', quantity: 500 },
-        { name: 'Miller Chivda Bambaya Bhel', quantity: 500 }
+        { name: 'Smoked Almonds', quantity: 10000 }
       ],
-      startDate: '2024-08-01',
-      endDate: '2024-08-20',
+      startDate: '2024-08-19',
+      endDate: '2024-09-01',
       stages: {
-        raised: { start: 1, duration: 2 },
-        preProduction: { start: 3, duration: 3 },
-        production: { start: 6, duration: 8 },
-        packaging: { start: 14, duration: 3 },
+        raised: { start: 19, duration: 1 },
+        preProduction: { start: 20, duration: 2 },
+        production: { start: 22, duration: 4 },
+        packaging: { start: 26, duration: 2 },
       },
       dailyStatus: {
-        1: { status: 'Y', stage: 'raised' },
-        2: { status: 'Y', stage: 'raised' },
-        3: { status: 'Y', stage: 'preProduction' },
-        4: { status: 'N', stage: 'preProduction' },
-        5: { status: 'D', stage: 'preProduction' },
-        6: { status: 'Y', stage: 'production' },
-        7: { status: 'N', stage: 'production' },
+        19: { status: 'Y', stage: 'raised' },
+        20: { status: 'Y', stage: 'preProduction' },
+        21: { status: 'Y', stage: 'preProduction' },
+        22: { status: 'Y', stage: 'production' },
+        23: { status: 'Y', stage: 'production' },
+        24: { status: 'Y', stage: 'production' },
+        25: { status: 'Y', stage: 'production' },
+      },
+      priority: 'high'
+    },
+    {
+      id: '2',
+      productCode: 'SP031',
+      skus: [
+        { name: 'SALTED CASHEW', quantity: 10000 },
+        { name: 'PAAN DATE', quantity: 2500 }
+      ],
+      startDate: '2024-08-20',
+      endDate: '2024-09-02',
+      stages: {
+        raised: { start: 20, duration: 1 },
+        preProduction: { start: 21, duration: 1 },
+        production: { start: 22, duration: 6 },
+        packaging: { start: 28, duration: 3 },
+      },
+      dailyStatus: {
+        20: { status: 'Y', stage: 'raised' },
+        21: { status: 'Y', stage: 'preProduction' },
+        22: { status: 'Y', stage: 'production' },
+        23: { status: 'Y', stage: 'production' },
+        24: { status: 'Y', stage: 'production' },
+        25: { status: 'Y', stage: 'production' },
+        26: { status: 'Y', stage: 'production' },
+        27: { status: 'Y', stage: 'production' },
+        28: { status: 'N', stage: 'packaging' },
+        29: { status: 'Y', stage: 'packaging' },
+        30: { status: 'Y', stage: 'packaging' },
+      },
+      priority: 'medium'
+    },
+    {
+      id: '3',
+      productCode: 'DIW37',
+      skus: [
+        { name: 'Dry Fruit Mix', quantity: 30 },
+        { name: 'Kurmura Cream & Onion', quantity: 40 },
+        { name: 'Hazelnut Date Laddoo', quantity: 30 },
+        { name: 'Cashews', quantity: 30 },
+        { name: 'Almonds', quantity: 30 }
+      ],
+      startDate: '2024-08-23',
+      endDate: '2024-09-05',
+      stages: {
+        raised: { start: 23, duration: 1 },
+        preProduction: { start: 24, duration: 2 },
+        production: { start: 26, duration: 6 },
+        packaging: { start: 1, duration: 2 },
+      },
+      dailyStatus: {
+        23: { status: 'Y', stage: 'raised' },
+        24: { status: 'Y', stage: 'preProduction' },
+        25: { status: 'Y', stage: 'preProduction' },
+        26: { status: 'Y', stage: 'production' },
+        27: { status: 'Y', stage: 'production' },
+        28: { status: 'Y', stage: 'production' },
+        29: { status: 'Y', stage: 'production' },
+        30: { status: 'Y', stage: 'production' },
+        31: { status: 'Y', stage: 'production' },
+        1: { status: 'Y', stage: 'packaging' },
+      },
+      priority: 'medium'
+    },
+    {
+      id: '4',
+      productCode: 'FBA36',
+      skus: [
+        { name: 'Dried Cranberries', quantity: 2900 },
+        { name: 'Hazelnut Protein Balls', quantity: 1100 },
+        { name: 'Coconut Orange Protein Balls', quantity: 800 },
+        { name: 'Peanut Butter Protein Balls', quantity: 700 },
+        { name: 'Hazelnut Date Laddoo', quantity: 1050 },
+        { name: 'Coconut Orange Date Laddoo', quantity: 600 },
+        { name: 'Coffee Cinnamon Date Laddoo', quantity: 600 }
+      ],
+      startDate: '2024-08-22',
+      endDate: '2024-09-03',
+      stages: {
+        raised: { start: 22, duration: 1 },
+        preProduction: { start: 23, duration: 2 },
+        production: { start: 25, duration: 5 },
+        packaging: { start: 30, duration: 3 },
+      },
+      dailyStatus: {
+        22: { status: 'Y', stage: 'raised' },
+        23: { status: 'Y', stage: 'preProduction' },
+        24: { status: 'Y', stage: 'preProduction' },
+        25: { status: 'Y', stage: 'production' },
+        26: { status: 'Y', stage: 'production' },
+        27: { status: 'Y', stage: 'production' },
+        28: { status: 'Y', stage: 'production' },
+        29: { status: 'Y', stage: 'production' },
+        30: { status: 'Y', stage: 'packaging' },
+        31: { status: 'N', stage: 'packaging' },
       },
       priority: 'high'
     }
